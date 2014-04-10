@@ -2,7 +2,21 @@ import sys
 from collections import namedtuple
 from importlib import import_module
 
-Plugin = namedtuple('Plugin', ['plugin_name', 'module', 'command', 'execute'])
+Plugin = namedtuple(
+    'Plugin', ['plugin_name', 'module', 'events', 'command', 'execute']
+)
+
+ALLOWED_EVENTS = [
+    'privmsg',
+    'join',
+    'part',
+    'quit',
+    'kick',
+    'action',
+    'topic',
+    'nick',
+    'invite',
+]
 
 
 class PluginManager(object):
@@ -24,8 +38,20 @@ class PluginManager(object):
             return
 
         plugin = module.Plugin()
+
+        events = {}
+        for event in ALLOWED_EVENTS:
+            if hasattr(plugin, event):
+                events[event] = getattr(plugin, event)
+
         self.loaded_plugins.append(
-            Plugin(plugin_name, module, plugin.command, plugin.run)
+            Plugin(
+                plugin_name,
+                module,
+                events,
+                plugin.command,
+                plugin.run
+            )
         )
 
     def unload_plugin(self, plugin_name):
@@ -42,14 +68,18 @@ class PluginManager(object):
             del self.loaded_plugins[index]
             del sys.modules[plugin[0].module.__name__]
 
-    def get_plugin_by_command(self, command):
+    def get_plugins_by_command(self, command):
         """
         This method returns plugin based on specified command
         """
-        plugin = [
+        plugins = [
             plugin for plugin in self.loaded_plugins
             if plugin.command == command
         ]
 
-        if plugin:
-            return plugin[0]
+        return plugins
+
+    def get_plugins_by_event(self, event):
+        for plugin in self.loaded_plugins:
+            if event in plugin.events:
+                yield plugin._replace(execute=plugin.events.get(event))

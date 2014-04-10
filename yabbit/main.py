@@ -1,8 +1,11 @@
+import logging
 
 from twisted.internet import reactor, protocol
 
 import config
 from bot import Yabbit
+
+log = logging.getLogger(__name__)
 
 
 class YabbitFactory(protocol.ClientFactory):
@@ -15,6 +18,7 @@ class YabbitFactory(protocol.ClientFactory):
         """
         self.nickname = 'yabbit'
         self.channels = channels
+        log.debug('Initialized Yabbit Factory')
 
     def buildProtocol(self, addr):
         """
@@ -29,12 +33,13 @@ class YabbitFactory(protocol.ClientFactory):
         Connection lost, try to reconnect.
         """
         connector.connect()
+        log.debug('Connection lost. Trying to reconnect...')
 
     def clientConnectionFailed(self, connector, reason):
         """
         Connection failed, print the reason and exit.
         """
-        print 'connection failed: {}'.format(reason)
+        log.error('Connection failed. Reason: {}'.format(reason))
         reactor.stop()
 
 

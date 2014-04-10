@@ -8,4 +8,5 @@ COMMAND_CHAR = '.'
 INSTALLED_PLUGINS = (
     'demo',
     'reload',
+    'youtube'
 )
