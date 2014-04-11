@@ -1,9 +1,8 @@
 
-
 class Plugin(object):
     command = ['yt', 'youtube']
 
-    def privmsg(self, bot, command, prefix, params):
+    def privmsg(self, bot, params, command, prefix):
         # [regexp] check if msg contain URL
         # check if url is YT url (this one gonna be tricky)
         # fetch URL title
