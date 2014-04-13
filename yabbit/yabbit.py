@@ -10,10 +10,10 @@ class CommandsAccessor(object):
     @classmethod
     def create(cls, **kwargs):
         accessor = cls()
-        for method_name in ('topic', 'mode', 'msg', 'notice',
-                            'whois', 'ping'):
-            setattr(accessor, method_name,
-                    kwargs.get(method_name, cls.do_nothing))
+        for attr_name in ('topic', 'mode', 'msg', 'notice',
+                          'whois', 'ping', 'connected_channels'):
+            setattr(accessor, attr_name,
+                    kwargs.get(attr_name, cls.do_nothing))
         return accessor
 
 
@@ -26,7 +26,9 @@ class Yabbit(irc.IRCClient):
         self.accessor = CommandsAccessor(
             msg=self.msg, topic=self.topic, mode=self.mode, notice=self.notice,
             whois=self.whois, ping=self.ping,
+            connected_channels=self.connected_channels,
         )
+        self._connected_channels = []
 
     @property
     def nickname(self):
@@ -73,3 +75,15 @@ class Yabbit(irc.IRCClient):
 
     def action(self, user, channel, data):
         PluginManager.dispatch('action', user, channel, data)
+
+    def joined(self, channel):
+        self._connected_channels.append(channel)
+
+    def kickedFrom(self, channel, kicker, message):
+        self._connected_channels.remove(channel)
+
+    # TODO: leave unsupported
+
+    @property
+    def connected_channels(self):
+        return list(self._connected_channels)

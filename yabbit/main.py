@@ -3,6 +3,7 @@ from twisted.internet import reactor
 
 from . import config
 from .plugin import PluginManager
+from .plugins import accessible_network_accessors
 from .yabbit import Yabbit
 
 
@@ -15,7 +16,9 @@ class YabbitFactory(protocol.ClientFactory):
         """
         Build a protocol (initialize main Bot class).
         """
-        return Yabbit(self)
+        client = Yabbit(self)
+        accessible_network_accessors[self.network] = client.accessor
+        return client
 
     def clientConnectionLost(self, connector, reason):
         """
