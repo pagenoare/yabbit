@@ -1,11 +1,13 @@
-
-NETWORK = 'irc.freenode.net'
-PORT = 6667
-CHANNELS = ['#playing-bots']
-
-COMMAND_CHAR = '.'
+NETWORKS = {
+    'freenode': {
+        'nickname': 'yabbit',
+        'host': 'irc.freenode.net',
+        'channels': [
+            '#playing-bots',
+        ],
+    }
+}
 
 INSTALLED_PLUGINS = (
-    'demo',
-    'reload',
+    'ping',
 )

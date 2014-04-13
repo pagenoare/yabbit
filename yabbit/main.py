@@ -1,28 +1,21 @@
+from twisted.internet import protocol
+from twisted.internet import reactor
 
-from twisted.internet import reactor, protocol
-
-import config
-from bot import Yabbit
+from . import config
+from .plugin import PluginManager
+from .yabbit import Yabbit
 
 
 class YabbitFactory(protocol.ClientFactory):
 
-    def __init__(self, channels):
-        """
-        Initialize Factory
-        :param channels: List of channels passed to bot to join after connecting
-        to network.
-        """
-        self.nickname = 'yabbit'
-        self.channels = channels
+    def __init__(self, network):
+        self.network = network
 
     def buildProtocol(self, addr):
         """
         Build a protocol (initialize main Bot class).
         """
-        yabbit = Yabbit()
-        yabbit.factory = self
-        return yabbit
+        return Yabbit(self)
 
     def clientConnectionLost(self, connector, reason):
         """
@@ -38,7 +31,24 @@ class YabbitFactory(protocol.ClientFactory):
         reactor.stop()
 
 
-if __name__ == '__main__':
-    factory = YabbitFactory(config.CHANNELS)
-    reactor.connectTCP(config.NETWORK, config.PORT, factory)
+def main():
+    load_plugins()
+    setup_networks_connections()
     reactor.run()
+
+
+def load_plugins():
+    plugin_manager = PluginManager()
+    for plugin_name in config.INSTALLED_PLUGINS:
+        plugin_manager.load(plugin_name)
+
+
+def setup_networks_connections():
+    for network, settings in config.NETWORKS.items():
+        reactor.connectTCP(
+            settings['host'], settings.get('port', 6667),
+            YabbitFactory(network)
+        )
+
+if __name__ == '__main__':
+    main()
