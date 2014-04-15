@@ -2,7 +2,7 @@ from importlib import import_module
 import logging
 import sys
 
-from .users import UserManager
+from users import UserManager
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,10 @@ class PluginManager(object):
                 '{}.{}'.format(cls.package_name, plugin_name)
             )
         except ImportError:
-            logger.error('{} couldn\'t be found. '.format(plugin_name),
-                         exc_info=True)
+            logger.error(
+                '{} couldn\'t be found. '.format(plugin_name),
+                exc_info=True
+            )
         else:
             cls.plugins.append(module.Plugin())
 
@@ -62,16 +64,18 @@ class PluginManager(object):
     def dispatch(cls, protocol, event, user, *args, **kwargs):
         if event not in cls.permitted_events:
             return
+
         for plugin in cls.plugins:
             try:
                 method = getattr(plugin, event, None)
                 if not method:
                     method = getattr(plugin, 'dispatch', None)
                     kwargs['event'] = event
+
                 if not method and event == 'privmsg' and hasattr(
                         plugin, 'command'):
                     channel, data = args
-                    command = data.split(sep=None, 1)[0]
+                    command = data.split(None, 1)[0]
                     if getattr(plugin, 'command') == command:
                         method = getattr(plugin, 'execute')
                         if not method:
@@ -80,10 +84,12 @@ class PluginManager(object):
                                 'defined "execute" method' %
                                 cls._plugin_name(plugin)
                             )
+                        method(protocol.accessor, user, channel, data)
 
                 if hasattr(plugin, event):
                     if cls._check_permissions(user, plugin, event):
                         method(protocol.accessor, user, *args, **kwargs)
+
             except Exception as e:
                 logger.warning(
                     'Exception when handling event "%s" by plugin "%s": %s' %

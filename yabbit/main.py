@@ -1,10 +1,10 @@
 from twisted.internet import protocol
 from twisted.internet import reactor
 
-from . import config
-from .plugin import PluginManager
-from .plugins import accessible_network_accessors
-from .yabbit import Yabbit
+import config
+from plugin import PluginManager
+from plugins import accessible_network_accessors
+from yabbit import Yabbit
 
 
 class YabbitFactory(protocol.ClientFactory):
