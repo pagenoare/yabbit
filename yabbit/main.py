@@ -52,6 +52,3 @@ def setup_networks_connections():
             settings['host'], settings.get('port', 6667),
             YabbitFactory(network)
         )
-
-if __name__ == '__main__':
-    main()

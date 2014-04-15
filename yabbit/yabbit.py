@@ -23,12 +23,12 @@ class Yabbit(irc.IRCClient):
         self.plugin_manager = PluginManager()
         self.config = config
         self.factory = factory
-        self.accessor = CommandsAccessor(
+        self._connected_channels = []
+        self.accessor = CommandsAccessor.create(
             msg=self.msg, topic=self.topic, mode=self.mode, notice=self.notice,
             whois=self.whois, ping=self.ping,
             connected_channels=self.connected_channels,
         )
-        self._connected_channels = []
 
     @property
     def nickname(self):
@@ -48,7 +48,7 @@ class Yabbit(irc.IRCClient):
         """
         Actions which will be executed after connecting to a server
         """
-        for channel in self.factory.channels:
+        for channel in self.channels:
             self.join(channel)
 
     def privmsg(self, user, channel, msg):
@@ -56,25 +56,27 @@ class Yabbit(irc.IRCClient):
         Runs plugins when command defined in plugin class has been sent
         (directly or on a channel)
         """
-        PluginManager.dispatch('privmsg', user, channel, msg)
+        PluginManager.dispatch(self, 'privmsg', user, channel, msg)
 
     def noticed(self, user, channel, message):
-        PluginManager.dispatch('noticed', user, channel, message)
+        PluginManager.dispatch(self, 'noticed', user, channel, message)
 
     def topicUpdated(self, user, channel, newTopic):
-        PluginManager.dispatch('topic_updated', user, channel, newTopic)
+        PluginManager.dispatch(self, 'topic_updated', user, channel,
+                               newTopic)
 
     def userJoined(self, user, channel):
-        PluginManager.dispatch('user_joined', user, channel)
+        PluginManager.dispatch(self, 'user_joined', user, channel)
 
     def userLeft(self, user, channel):
-        PluginManager.dispatch('user_left', user, channel)
+        PluginManager.dispatch(self, 'user_left', user, channel)
 
     def userKicked(self, kickee, channel, kicker, message):
-        PluginManager.dispatch('user_left', kickee, channel, kicker, message)
+        PluginManager.dispatch(self, 'user_left', kickee, channel,
+                               kicker, message)
 
     def action(self, user, channel, data):
-        PluginManager.dispatch('action', user, channel, data)
+        PluginManager.dispatch(self, 'action', user, channel, data)
 
     def joined(self, channel):
         self._connected_channels.append(channel)

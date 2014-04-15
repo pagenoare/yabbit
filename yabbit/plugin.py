@@ -48,15 +48,19 @@ class PluginManager(object):
         """
         Method used to unload specified plugin
         """
-        plugin = [
-            plugin for plugin in cls.plugins
-            if cls._plugin_name(plugin) == plugin_name
-        ][0]
-
-        if plugin:
-            index = cls.plugins.index(plugin)
-            del cls.plugins[index]
-            del sys.modules[plugin.__module__]
+        try:
+            plugin = [
+                plugin for plugin in cls.plugins
+                if cls._plugin_name(plugin) == plugin_name
+            ][0]
+        except IndexError:
+            logger.error('unload called with not loaded plugin name:'
+                         ' %s' % plugin_name)
+        else:
+            if plugin:
+                index = cls.plugins.index(plugin)
+                del cls.plugins[index]
+                del sys.modules[plugin.__module__]
 
     @classmethod
     def dispatch(cls, protocol, event, user, *args, **kwargs):
@@ -71,7 +75,7 @@ class PluginManager(object):
                 if not method and event == 'privmsg' and hasattr(
                         plugin, 'command'):
                     channel, data = args
-                    command = data.split(sep=None, 1)[0]
+                    command = data.split(None, 1)[0]
                     if getattr(plugin, 'command') == command:
                         method = getattr(plugin, 'execute')
                         if not method:
@@ -80,10 +84,13 @@ class PluginManager(object):
                                 'defined "execute" method' %
                                 cls._plugin_name(plugin)
                             )
+                            continue
 
-                if hasattr(plugin, event):
-                    if cls._check_permissions(user, plugin, event):
-                        method(protocol.accessor, user, *args, **kwargs)
+                if cls._check_permissions(user, plugin, event):
+                    method(protocol.accessor, user, *args, **kwargs)
+                else:
+                    logger.debug('No permission for %s on %s' %
+                                 (event, plugin.__class__.__name__))
             except Exception as e:
                 logger.warning(
                     'Exception when handling event "%s" by plugin "%s": %s' %
@@ -92,6 +99,6 @@ class PluginManager(object):
     @staticmethod
     def _check_permissions(user, plugin, event):
         permission = getattr(plugin, 'permission', None)
-        if not permission or event not in ('privmsg', 'noticed', 'topic'):
+        if not permission and event in ('privmsg', 'noticed', 'topic'):
             return True
         return UserManager().has_permission(user, permission)
